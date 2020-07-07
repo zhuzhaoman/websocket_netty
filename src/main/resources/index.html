@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<div id="showMsg" style="width: 400px; height: 300px;border: 1px solid #000;">
+
+</div>
+<input type="text" id="content"></input>
+<button onclick="connectWebSocket()">连接</button>
+<button onclick="closeWebSocket()">关闭</button>
+<button onclick="clearMsg()">清除</button>
+<button onclick="sendMsg()">发送</button>
+
+<script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.js"></script>
+<script type="text/javascript">
+    let ws;
+
+    function connectWebSocket() {
+        // 1.判断浏览器是否支持WebSocket
+        if (window.WebSocket) {
+            // 2.连接WebSocket服务器
+            ws = new WebSocket("ws://localhost:9000/");
+
+            ws.onopen = function () {
+                console.log("客户端连接成功！");
+                $("#showMsg").append("<span style='color: green;'>客户端连接服务器成功！</span><hr/>");
+
+                // 连接服务器成功后开始发送心跳包
+                sendHard();
+                // 开启自动关闭
+                closeConn()
+            };
+
+            ws.onclose = function () {
+                console.log("客户端断开连接！");
+
+                // 关闭定时任务
+                clearInterval(sendHeardTime);
+
+                $("#showMsg").append("<span style='color: red;'>客户端断开服务器成功！</span><hr/>")
+            };
+
+            ws.onmessage = function (res) {
+                console.info("服务器响应数据：" + res);
+                let msg = res.data;
+                if (msg === 'heard') {
+                    clearTimeout(closeConnTime); // 清除延迟关闭的连接
+                    closeConn(); // 开启自动关闭
+                    return;
+                }
+                $("#showMsg").append("<span style='color: gray;'>" + "服务器：" + msg +"</span><br>")
+            }
+        } else {
+            alert("不支持WebSocket")
+        }
+    }
+
+    function closeWebSocket() {
+        ws.close()
+    }
+
+    function sendMsg() {
+        let msg = $("#content").val();
+        $("#content").val("");
+        ws.send(msg);
+        $("#showMsg").append("我：" + msg + "<br/>")
+    }
+
+    function clearMsg() {
+        $("#showMsg").html("")
+    }
+
+    // 5s发送一个心跳包
+    let sendHeardTime;
+    function sendHard() {
+        sendHeardTime = setInterval(function () {
+            ws.send("heard")
+        }, 5000)
+    }
+
+    // 关闭心跳
+    let closeConnTime;
+    function closeConn() {
+        closeConnTime = setTimeout(function () {
+            ws.close()
+        }, 10000)
+    }
+
+    // 从新连接
+    function reConn() {
+        open()
+    }
+</script>
+</body>
+</html>

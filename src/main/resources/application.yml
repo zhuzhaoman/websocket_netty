@@ -1,0 +1,7 @@
+netty:
+  port: 9000
+  url: 127.0.0.1
+  websocket:
+    host: 0.0.0.1
+    path: /
+    port: 80
